@@ -8,7 +8,7 @@ import { ApiSyncLog } from "@/types";
 import { formatDateTime } from "@/lib/utils";
 
 export default function MonitorPage() {
-  const [v2Health, setV2Health] = useState<{ healthy: boolean; latency: number } | null>(null);
+  const [v2Health, setV2Health] = useState<{ healthy: boolean; latency: number; statusCode?: number } | null>(null);
   const [stats, setStats] = useState<{
     totalCalls: number; successCalls: number; failedCalls: number;
     lastSyncTime: string | null; successRate: number; recentLogs: ApiSyncLog[];

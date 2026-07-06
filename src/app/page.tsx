@@ -17,7 +17,7 @@ export default function Dashboard() {
     recent: ExceptionTicket[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [v2Health, setV2Health] = useState<{ healthy: boolean; latency: number } | null>(null);
+  const [v2Health, setV2Health] = useState<{ healthy: boolean; latency: number; statusCode?: number } | null>(null);
 
   useEffect(() => {
     Promise.all([fetchStats(), checkV2Health().then(setV2Health)]);
@@ -80,12 +80,23 @@ export default function Dashboard() {
       }}>
         <span>V2 系统：
           <span style={{ fontWeight: 600, color: v2Health?.healthy ? "#00a854" : "#cf1322" }}>
-            {v2Health ? (v2Health.healthy ? "● 正常" : "● 不可用") : "检测中..."}
+            {!v2Health ? "检测中..." : v2Health.healthy ? "● 正常" : `● 不可用`}
           </span>
           {v2Health && <span style={{ marginLeft: 8, color: "var(--text-tertiary)" }}>延迟 {v2Health.latency}ms</span>}
+          {v2Health && v2Health.statusCode && !v2Health.healthy && (
+            <span style={{ marginLeft: 4, fontSize: 11, color: "#999" }}>
+              (HTTP {v2Health.statusCode})
+            </span>
+          )}
         </span>
         {v2Health && !v2Health.healthy && (
-          <span style={{ color: "#d97b00", fontSize: 12 }}>（异常上报需 V2 实时校验）</span>
+          <span style={{ color: "#d97b00", fontSize: 12 }}>
+            {v2Health.statusCode === 408 || v2Health.statusCode === 0
+              ? "（网络超时，请确认 V2 服务是否已部署）"
+              : v2Health.statusCode === 401
+                ? "（Key 不匹配，请检查 V2_API_KEY 环境变量）"
+                : "（异常上报需 V2 实时校验）"}
+          </span>
         )}
       </div>
 

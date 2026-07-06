@@ -29,7 +29,7 @@ export default function NewTicketPage() {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [v2Status, setV2Status] = useState<{ healthy: boolean; latency: number } | null>(null);
+  const [v2Status, setV2Status] = useState<{ healthy: boolean; latency: number; statusCode?: number } | null>(null);
   const [verifiedWaybill, setVerifiedWaybill] = useState<Record<string, unknown> | null>(null);
   const [aiSuggestion, setAiSuggestion] = useState<{ type: ExceptionType; reason: string } | null>(null);
   const [v2Unavailable, setV2Unavailable] = useState(false);
@@ -136,9 +136,16 @@ export default function NewTicketPage() {
           {v2Status ? (v2Status.healthy ? "● 正常" : "● 不可用") : "检测中..."}
         </span>
         {v2Status && <span style={{ marginLeft: 8, color: "var(--text-tertiary)" }}>延迟 {v2Status.latency}ms</span>}
-        {v2Unavailable && (
+        {v2Status && v2Status.statusCode && !v2Status.healthy && (
+          <span style={{ marginLeft: 4, fontSize: 11, color: "#999" }}>(HTTP {v2Status.statusCode})</span>
+        )}
+        {v2Status && !v2Status.healthy && (
           <span style={{ marginLeft: 8, color: "#d97b00", fontSize: 12, fontWeight: 500 }}>
-            （V2 不可用时无法提交异常工单，需实时校验运单存在性）
+            {v2Status.statusCode === 408 || v2Status.statusCode === 0
+              ? "（网络超时，请确认 V2 服务是否已部署到 Vercel）"
+              : v2Status.statusCode === 401
+                ? "（API Key 不匹配，请检查环境变量 V2_API_KEY）"
+                : "（V2 不可用时无法提交异常工单，需实时校验运单存在性）"}
           </span>
         )}
       </div>

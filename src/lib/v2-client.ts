@@ -140,15 +140,25 @@ export async function verifySkuBelongsToWaybill(waybillId: string, skuCode: stri
 }
 
 /** V2 健康检查 */
-export async function checkV2Health(): Promise<{ healthy: boolean; latency: number }> {
+export async function checkV2Health(): Promise<{ healthy: boolean; latency: number; statusCode?: number }> {
   const start = Date.now();
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    const resp = await fetch(`${V2_BASE}/health`, { signal: controller.signal, headers: { "X-API-Key": API_KEY } });
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const resp = await fetch(`${V2_BASE}/health`, {
+      signal: controller.signal,
+      headers: { "X-API-Key": API_KEY },
+      // 使用 no-cors 模式的替代方案：直接检查响应
+    });
     clearTimeout(timeoutId);
-    return { healthy: resp.ok, latency: Date.now() - start };
-  } catch {
-    return { healthy: false, latency: Date.now() - start };
+    const latency = Date.now() - start;
+    // 200 是健康，401 说明 V2 在运行但 Key 不匹配（也算活着）
+    // 404 说明路由不存在
+    return { healthy: resp.ok || resp.status === 401, latency, statusCode: resp.status };
+  } catch (err) {
+    const latency = Date.now() - start;
+    const isTimeout = err instanceof DOMException && err.name === "AbortError";
+    // 超时或网络错误 -> 不可用
+    return { healthy: false, latency, statusCode: isTimeout ? 408 : 0 };
   }
 }

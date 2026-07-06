@@ -20,7 +20,7 @@ export default function ScanPage() {
   const [labelMatch, setLabelMatch] = useState(true);
   const [batchValid, setBatchValid] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [v2Status, setV2Status] = useState<{ healthy: boolean; latency: number } | null>(null);
+  const [v2Status, setV2Status] = useState<{ healthy: boolean; latency: number; statusCode?: number } | null>(null);
   const [recentScans, setRecentScans] = useState<ScanRecord[]>([]);
   const [resultModal, setResultModal] = useState<{ open: boolean; scan?: ScanRecord; ticket?: ExceptionTicket }>({ open: false });
   const inputRef = useRef<HTMLInputElement>(null);
@@ -117,12 +117,17 @@ export default function ScanPage() {
       }}>
         V2 系统状态：
         <span style={{ fontWeight: 600, color: v2Available ? "#00a854" : "#cf1322" }}>
-          {v2Status ? (v2Available ? "正常" : "不可用") : "检测中..."}
+          {v2Status ? (v2Available ? "● 正常" : "● 不可用") : "检测中..."}
         </span>
         {v2Status && <span style={{ marginLeft: 8, color: "var(--text-tertiary)" }}>延迟 {v2Status.latency}ms</span>}
+        {v2Status && v2Status.statusCode && !v2Available && (
+          <span style={{ marginLeft: 4, fontSize: 11, color: "#999" }}>(HTTP {v2Status.statusCode})</span>
+        )}
         {!v2Available && v2Status && (
           <span style={{ marginLeft: 8, color: "#d97b00", fontSize: 12 }}>
-            （不填运单号可离线进行品控检测，但不会做 SKU 归属校验）
+            {v2Status.statusCode === 408 || v2Status.statusCode === 0
+              ? "（网络超时，确认 V2 是否已部署）"
+              : "（不填运单号可离线进行品控检测，但不会做 SKU 归属校验）"}
           </span>
         )}
       </div>
